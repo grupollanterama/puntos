@@ -58,7 +58,7 @@ async function consultar(){
     $('form').style.display='none'; $('res').style.display='block';
     $('res').innerHTML=`
       <div class="card saldo"><small>Hola ${r.nombre} · ${r.folio}</small><b>${n(r.saldo)}</b><div class="eq">puntos disponibles ≈ $${n(r.saldo)} en tu próxima compra</div>
-        <div class="tag ${r.puedeCanjear?'ok':'no'}">${r.puedeCanjear?'✅ Ya puedes usar tus puntos':'Podrás usar tus puntos a partir de tu 2ª compra'}</div></div>
+        <div class="tag ${r.puedeCanjear?'ok':'no'}">${r.puedeCanjear?'✅ Ya puedes usar tus puntos':'Podrás usar tus puntos en tu próxima compra'}</div></div>
       <div class="card"><b style="color:var(--navy)">Últimos movimientos</b><br>${r.movimientos.length?r.movimientos.map(m=>`<div class="mv"><div>${m.tipo==='COMPRA'?'Compra '+(m.factura||''):'Canje '+(m.detalle||m.factura||'')}<span>${m.fecha}</span></div><div class="${m.puntos<0?'neg':'pos'}">${m.puntos>0?'+':''}${n(m.puntos)}</div></div>`).join(''):'<p style="color:var(--mut);margin-top:8px">Aún no tienes compras registradas.</p>'}</div>
       ${r.celular?`<div class="card"><small style="color:var(--mut)">Tu asesor: <b>${r.asesor}</b></small><a class="wa" href="https://wa.me/52${r.celular}" target="_blank">Escribir a mi asesor</a></div>`:''}`;
   }catch(e){ $('err').textContent=e.message; }
