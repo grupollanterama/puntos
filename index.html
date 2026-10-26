@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Puntos · Grupo Llanterama</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1f2f6b;--navy2:#2b3f8c;--yellow:#ffc20e;--red:#e30613;--bg:#f3f5fa;--line:#e3e7f0;--mut:#6b7389}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:#1b2236;min-height:100vh}
+header{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:28px 20px 60px;text-align:center}
+header h1{font-size:26px;font-weight:800;font-style:italic}header h1 span{color:var(--yellow)}
+header p{opacity:.8;font-size:13px;margin-top:4px}
+.wrap{max-width:440px;margin:-40px auto 40px;padding:0 16px}
+.card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:12px 0 4px}
+input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font:600 16px Inter;text-transform:uppercase}
+input:focus{outline:2px solid var(--yellow);border-color:transparent}
+.btn{width:100%;margin-top:16px;border:0;border-radius:10px;padding:14px;font:800 16px Inter;background:var(--yellow);color:var(--navy);cursor:pointer}
+.err{color:var(--red);font-size:13px;font-weight:600;margin-top:10px;min-height:16px}
+.saldo{text-align:center}
+.saldo small{color:var(--mut);font-weight:600}
+.saldo b{display:block;font-size:52px;font-weight:800;color:var(--navy);line-height:1.1}
+.saldo .eq{font-size:14px;color:var(--mut)}
+.tag{display:inline-block;margin-top:10px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.ok{background:#dcfce7;color:#166534}.no{background:#fff3cd;color:#8a6100}
+.mv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.mv:last-child{border:0}.mv span{color:var(--mut);font-size:12px;display:block}
+.pos{color:#16a34a;font-weight:800}.neg{color:var(--red);font-weight:800}
+.wa{display:block;text-align:center;background:#25d366;color:#fff;text-decoration:none;font-weight:800;border-radius:10px;padding:13px;margin-top:6px}
+#res{display:none}
+</style>
+</head>
+<body>
+<header><h1>Cliente <span>Frecuente</span></h1><p>Grupo Llanterama · Consulta tus puntos</p></header>
+<div class="wrap">
+  <div class="card" id="form">
+    <label>Folio de tu tarjeta</label><input id="folio" placeholder="TMG-001" maxlength="7">
+    <label>Últimos 4 dígitos de tu teléfono</label><input id="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+    <button class="btn" id="btn" onclick="consultar()">Ver mis puntos</button>
+    <div class="err" id="err"></div>
+  </div>
+  <div id="res"></div>
+</div>
+<script>
+/* Misma URL /exec del sistema */
+const API_URL='https://script.google.com/macros/s/AKfycbwDeFwj4W8EBWeZP0o-IVuiTODuGP5rN8HWM4pdPiP1RAU5s8bFCs5rdlHbHONrfDaeOw/exec';
+const $=id=>document.getElementById(id);
+const n=x=>Number(x).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+const q=new URLSearchParams(location.search); if(q.get('f')) $('folio').value=q.get('f');
+$('tel').addEventListener('keyup',e=>{if(e.key==='Enter')consultar();});
+async function consultar(){
+  $('err').textContent=''; $('btn').disabled=true; $('btn').textContent='Consultando…';
+  try{
+    const r=await fetch(`${API_URL}?action=consulta&folio=${encodeURIComponent($('folio').value)}&tel=${encodeURIComponent($('tel').value)}`).then(r=>r.json());
+    if(!r.ok) throw new Error(r.error);
+    $('form').style.display='none'; $('res').style.display='block';
+    $('res').innerHTML=`
+      <div class="card saldo"><small>Hola ${r.nombre} · ${r.folio}</small><b>${n(r.saldo)}</b><div class="eq">puntos disponibles ≈ $${n(r.saldo)} en tu próxima compra</div>
+        <div class="tag ${r.puedeCanjear?'ok':'no'}">${r.puedeCanjear?'✅ Ya puedes usar tus puntos':'Podrás usar tus puntos a partir de tu 2ª compra'}</div></div>
+      <div class="card"><b style="color:var(--navy)">Últimos movimientos</b><br>${r.movimientos.length?r.movimientos.map(m=>`<div class="mv"><div>${m.tipo==='COMPRA'?'Compra '+(m.factura||''):'Canje '+(m.detalle||m.factura||'')}<span>${m.fecha}</span></div><div class="${m.puntos<0?'neg':'pos'}">${m.puntos>0?'+':''}${n(m.puntos)}</div></div>`).join(''):'<p style="color:var(--mut);margin-top:8px">Aún no tienes compras registradas.</p>'}</div>
+      ${r.celular?`<div class="card"><small style="color:var(--mut)">Tu asesor: <b>${r.asesor}</b></small><a class="wa" href="https://wa.me/52${r.celular}" target="_blank">Escribir a mi asesor</a></div>`:''}`;
+  }catch(e){ $('err').textContent=e.message; }
+  finally{ $('btn').disabled=false; $('btn').textContent='Ver mis puntos'; }
+}
+</script>
+</body>
+</html>
